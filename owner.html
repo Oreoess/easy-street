@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Easy Street — My Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F4EE;
+    --ink: #1C1C1A;
+    --ink-soft: #6B6860;
+    --ink-faint: #C4C1B8;
+    --green: #2D5A27;
+    --green-light: #EAF2E8;
+    --amber: #C47B1A;
+    --amber-light: #FDF3E3;
+    --red-light: #FAE8E8;
+    --red: #A33030;
+    --border: rgba(28,28,26,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+  h1, h2 { font-family: 'DM Serif Display', serif; font-weight: 400; }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* HEADER */
+  .site-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink); }
+  .logo span { color: var(--green); }
+  .owner-badge { font-size: 12px; color: var(--ink-soft); background: white; border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; }
+
+  /* NAV */
+  .nav-header { display: flex; align-items: center; gap: 12px; padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+  .back-btn { background: none; border: none; cursor: pointer; color: var(--ink-soft); font-size: 20px; padding: 0; line-height: 1; }
+  .nav-title { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .nav-sub { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-size: 14px; }
+  .loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); margin: 0 2px; animation: pulse 1.2s ease-in-out infinite; }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+
+  /* INVALID */
+  .invalid-screen { padding: 80px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .invalid-icon { font-size: 40px; }
+  .invalid-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--ink); }
+  .invalid-body { font-size: 14px; color: var(--ink-soft); line-height: 1.7; max-width: 260px; }
+
+  /* WELCOME BANNER */
+  .welcome { padding: 20px; }
+  .welcome-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .welcome-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink); }
+  .welcome-sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; line-height: 1.5; }
+
+  /* SECTION */
+  .section-lbl { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; padding: 16px 20px 8px; }
+
+  /* ADD TOOL BTN */
+  .add-tool-btn { margin: 0 20px 4px; width: calc(100% - 40px); padding: 13px; border-radius: var(--radius); background: var(--ink); color: var(--cream); border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* TOOL LIST */
+  .tool-list { padding: 0 20px 32px; display: flex; flex-direction: column; gap: 10px; }
+  .tool-item { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .tool-item-photo { width: 48px; height: 48px; border-radius: var(--radius-sm); background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; cursor: pointer; border: 1px dashed var(--ink-faint); position: relative; }
+  .tool-item-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); }
+  .tool-item-photo.has-photo { border-style: solid; border-color: var(--border); }
+  .photo-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.35); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; font-size: 16px; }
+  .tool-item-photo:hover .photo-overlay { opacity: 1; }
+  .tool-item-body { flex: 1; min-width: 0; }
+  .tool-item-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+  .tool-item-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .tool-item-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
+  .tag-available { background: var(--green-light); color: var(--green); }
+  .tag-loan { background: var(--amber-light); color: var(--amber); }
+  .action-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--ink-soft); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .action-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  /* FORMS */
+  .form-wrap { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .field-lbl { font-size: 12px; color: var(--ink-soft); margin-bottom: 5px; }
+  .field-input { width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: white; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
+  .field-input:focus { border-color: var(--ink); }
+  .field-input::placeholder { color: var(--ink-faint); }
+  textarea.field-input { resize: none; height: 80px; line-height: 1.5; }
+  select.field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6860' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  /* PHOTO UPLOAD */
+  .photo-upload-zone { border: 2px dashed var(--ink-faint); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; transition: border-color 0.15s; background: white; }
+  .photo-upload-zone:hover { border-color: var(--ink); }
+  .photo-upload-zone.has-image { border-style: solid; border-color: var(--green); padding: 12px; }
+  .photo-upload-zone img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--radius-sm); }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--ink-soft); }
+  .upload-sub { font-size: 11px; color: var(--ink-faint); margin-top: 4px; }
+
+  /* BUTTONS */
+  .btn-primary { width: 100%; padding: 14px; border-radius: var(--radius); background: var(--ink); color: var(--cream); border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { width: 100%; padding: 13px; border-radius: var(--radius); background: none; color: var(--ink); border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; }
+
+  /* SUCCESS */
+  .success-screen { padding: 60px 24px 32px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .success-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+  .success-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--ink); }
+  .success-body { font-size: 14px; color: var(--ink-soft); line-height: 1.7; max-width: 280px; }
+
+  .empty { text-align: center; padding: 32px 20px; color: var(--ink-soft); font-size: 14px; }
+  .hidden { display: none; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .tool-item { animation: fadeUp 0.2s ease both; }
+</style>
+</head>
+<body>
+
+<!-- SCREEN: LOADING -->
+<div id="screen-loading" class="screen active">
+  <div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>
+</div>
+
+<!-- SCREEN: INVALID TOKEN -->
+<div id="screen-invalid" class="screen">
+  <div class="invalid-screen">
+    <div class="invalid-icon">🔒</div>
+    <div class="invalid-title">Link not recognised</div>
+    <div class="invalid-body">This link may have expired or is invalid. Ask the Easy Street admin to resend your magic link.</div>
+  </div>
+</div>
+
+<!-- SCREEN: DASHBOARD -->
+<div id="screen-dashboard" class="screen">
+  <div class="site-header">
+    <div class="logo">Easy <span>Street</span></div>
+    <div class="owner-badge" id="owner-badge"></div>
+  </div>
+  <div class="welcome">
+    <div class="welcome-card">
+      <div class="welcome-title">Hi <span id="owner-first-name"></span> 👋</div>
+      <div class="welcome-sub">Manage your tools below. Neighbours can only see tool details — your contact info stays private until you accept a request.</div>
+    </div>
+  </div>
+  <button class="add-tool-btn" onclick="show('screen-add')">+ Add a tool</button>
+  <div class="section-lbl">Your tools</div>
+  <div class="tool-list" id="owner-tool-list">
+    <div class="empty">No tools listed yet — add your first one above.</div>
+  </div>
+</div>
+
+<!-- SCREEN: ADD TOOL -->
+<div id="screen-add" class="screen">
+  <div class="nav-header">
+    <button class="back-btn" onclick="show('screen-dashboard')">&#8592;</button>
+    <div>
+      <div class="nav-title">Add a tool</div>
+      <div class="nav-sub">It'll appear on Easy Street straight away</div>
+    </div>
+  </div>
+  <div class="form-wrap">
+    <div>
+      <div class="field-lbl">Tool name</div>
+      <input class="field-input" type="text" id="add-name" placeholder="e.g. Cordless drill" />
+    </div>
+    <div>
+      <div class="field-lbl">Category</div>
+      <select class="field-input" id="add-category">
+        <option value="">Select a category</option>
+        <option value="diy">DIY</option>
+        <option value="garden">Garden</option>
+        <option value="kitchen">Kitchen</option>
+      </select>
+    </div>
+    <div>
+      <div class="field-lbl">Emoji icon</div>
+      <input class="field-input" type="text" id="add-icon" placeholder="e.g. 🔧 🪚 🌿" maxlength="4" />
+    </div>
+    <div>
+      <div class="field-lbl">Condition</div>
+      <select class="field-input" id="add-condition">
+        <option value="">Select condition</option>
+        <option value="Excellent">Excellent</option>
+        <option value="Good">Good</option>
+        <option value="Fair">Fair</option>
+      </select>
+    </div>
+    <div>
+      <div class="field-lbl">Notes (optional)</div>
+      <textarea class="field-input" id="add-notes" placeholder="Anything useful — what's included, any quirks..."></textarea>
+    </div>
+    <div>
+      <div class="field-lbl">Photo (optional — helps neighbours recognise it)</div>
+      <div class="photo-upload-zone" id="upload-zone" onclick="document.getElementById('photo-file').click()">
+        <div id="upload-placeholder">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Tap to add a photo</div>
+          <div class="upload-sub">JPG or PNG · max 5MB</div>
+        </div>
+        <img id="upload-preview" class="hidden" alt="Preview" />
+      </div>
+      <input type="file" id="photo-file" accept="image/*" class="hidden" onchange="previewPhoto(this)" />
+    </div>
+    <button class="btn-primary" id="add-submit-btn" onclick="submitTool()">Add tool to Easy Street</button>
+    <button class="btn-secondary" onclick="show('screen-dashboard')">Cancel</button>
+  </div>
+</div>
+
+<!-- SCREEN: PHOTO UPLOAD (for existing tool) -->
+<div id="screen-photo" class="screen">
+  <div class="nav-header">
+    <button class="back-btn" onclick="show('screen-dashboard')">&#8592;</button>
+    <div>
+      <div class="nav-title">Update photo</div>
+      <div class="nav-sub" id="photo-tool-name"></div>
+    </div>
+  </div>
+  <div class="form-wrap">
+    <div>
+      <div class="photo-upload-zone" id="upload-zone-edit" onclick="document.getElementById('photo-file-edit').click()">
+        <div id="upload-placeholder-edit">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Tap to choose a photo</div>
+          <div class="upload-sub">JPG or PNG · max 5MB</div>
+        </div>
+        <img id="upload-preview-edit" class="hidden" alt="Preview" />
+      </div>
+      <input type="file" id="photo-file-edit" accept="image/*" class="hidden" onchange="previewPhotoEdit(this)" />
+    </div>
+    <button class="btn-primary" id="photo-submit-btn" onclick="submitPhoto()">Save photo</button>
+    <button class="btn-secondary" onclick="show('screen-dashboard')">Cancel</button>
+  </div>
+</div>
+
+<!-- SCREEN: SUCCESS -->
+<div id="screen-success" class="screen">
+  <div class="success-screen">
+    <div class="success-icon">✓</div>
+    <div class="success-title" id="success-title">Tool added</div>
+    <div class="success-body" id="success-body">Your tool is now live on Easy Street.</div>
+  </div>
+  <div style="padding: 0 20px 32px;">
+    <button class="btn-primary" onclick="reloadDashboard()">Back to my tools</button>
+  </div>
+</div>
+
+<script>
+  var API = "https://script.google.com/macros/s/AKfycbyKklhWEocHgjUuVLNQMN-iLFXFnoSB7r5_XZ-8Na7hUd8IZi0d_bgPmclT01BtyH0kuA/exec";
+  var ownerToken = null;
+  var ownerData = null;
+  var ownerTools = [];
+  var currentEditToolId = null;
+  var pendingPhotoBase64 = null;
+  var pendingPhotoMime = null;
+  var pendingPhotoName = null;
+
+  // ---- INIT ----
+  window.addEventListener('DOMContentLoaded', function() {
+    var params = new URLSearchParams(window.location.search);
+    ownerToken = params.get('token');
+    if (!ownerToken) { show('screen-invalid'); return; }
+    loadOwnerPage();
+  });
+
+  function loadOwnerPage() {
+    fetch(API + "?action=ownerPage&token=" + ownerToken)
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.error || !data.owner) { show('screen-invalid'); return; }
+        ownerData = data.owner;
+        ownerTools = data.tools || [];
+        renderDashboard();
+        show('screen-dashboard');
+      })
+      .catch(function(){ show('screen-invalid'); });
+  }
+
+  // ---- SCREENS ----
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  // ---- DASHBOARD ----
+  function renderDashboard() {
+    var firstName = ownerData.name.split(' ')[0];
+    document.getElementById('owner-first-name').textContent = firstName;
+    document.getElementById('owner-badge').textContent = 'No. ' + ownerData.house_number;
+    var list = document.getElementById('owner-tool-list');
+    if (!ownerTools.length) {
+      list.innerHTML = '<div class="empty">No tools listed yet — add your first one above.</div>';
+      return;
+    }
+    list.innerHTML = ownerTools.map(function(t, i){
+      var photoHtml = t.photo_url
+        ? '<img src="' + t.photo_url + '" alt="' + t.name + '" /><div class="photo-overlay">📷</div>'
+        : (t.icon || '🔧') + '<div class="photo-overlay">📷</div>';
+      var hasPhoto = !!t.photo_url;
+      return '<div class="tool-item" style="animation-delay:' + (i*0.05) + 's">'
+        + '<div class="tool-item-photo ' + (hasPhoto ? 'has-photo' : '') + '" onclick="openPhotoEdit(\'' + t.tool_id + '\',\'' + t.name + '\')">'
+        + photoHtml + '</div>'
+        + '<div class="tool-item-body">'
+        + '<div class="tool-item-name">' + t.name + '</div>'
+        + '<div class="tool-item-meta">' + t.condition + ' · ' + t.category + '</div>'
+        + '<div class="tool-item-actions">'
+        + '<span class="tag ' + (t.available ? 'tag-available' : 'tag-loan') + '">' + (t.available ? 'Available' : 'On loan') + '</span>'
+        + '<button class="action-btn" onclick="toggleAvailability(\'' + t.tool_id + '\',' + t.available + ')">'
+        + (t.available ? 'Mark on loan' : 'Mark available') + '</button>'
+        + '</div></div></div>';
+    }).join('');
+  }
+
+  // ---- TOGGLE AVAILABILITY ----
+  function toggleAvailability(toolId, currentAvail) {
+    fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'toggleAvailability',
+        tool_id: toolId,
+        available: !currentAvail,
+        token: ownerToken
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.success) {
+          ownerTools = ownerTools.map(function(t){
+            if (t.tool_id === toolId) t.available = !currentAvail;
+            return t;
+          });
+          renderDashboard();
+        }
+      });
+  }
+
+  // ---- PHOTO PREVIEW (add) ----
+  function previewPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var zone = document.getElementById('upload-zone');
+      var preview = document.getElementById('upload-preview');
+      var placeholder = document.getElementById('upload-placeholder');
+      preview.src = e.target.result;
+      preview.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      zone.classList.add('has-image');
+      pendingPhotoBase64 = e.target.result.split(',')[1];
+      pendingPhotoMime = file.type;
+      pendingPhotoName = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ---- PHOTO PREVIEW (edit) ----
+  function previewPhotoEdit(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var zone = document.getElementById('upload-zone-edit');
+      var preview = document.getElementById('upload-preview-edit');
+      var placeholder = document.getElementById('upload-placeholder-edit');
+      preview.src = e.target.result;
+      preview.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      zone.classList.add('has-image');
+      pendingPhotoBase64 = e.target.result.split(',')[1];
+      pendingPhotoMime = file.type;
+      pendingPhotoName = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ---- OPEN PHOTO EDIT ----
+  function openPhotoEdit(toolId, toolName) {
+    currentEditToolId = toolId;
+    pendingPhotoBase64 = null;
+    document.getElementById('photo-tool-name').textContent = toolName;
+    document.getElementById('upload-preview-edit').classList.add('hidden');
+    document.getElementById('upload-placeholder-edit').classList.remove('hidden');
+    document.getElementById('upload-zone-edit').classList.remove('has-image');
+    show('screen-photo');
+  }
+
+  // ---- SUBMIT PHOTO ----
+  function submitPhoto() {
+    if (!pendingPhotoBase64) { alert('Please choose a photo first.'); return; }
+    var btn = document.getElementById('photo-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+    fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'uploadPhoto',
+        tool_id: currentEditToolId,
+        imageData: pendingPhotoBase64,
+        mimeType: pendingPhotoMime,
+        fileName: pendingPhotoName,
+        token: ownerToken
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        btn.disabled = false;
+        btn.textContent = 'Save photo';
+        if (data.success) {
+          ownerTools = ownerTools.map(function(t){
+            if (t.tool_id === currentEditToolId) t.photo_url = data.url;
+            return t;
+          });
+          document.getElementById('success-title').textContent = 'Photo saved';
+          document.getElementById('success-body').textContent = 'Your tool photo is now live on Easy Street.';
+          show('screen-success');
+        } else {
+          alert('Upload failed. Please try again.');
+        }
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Save photo';
+        alert('Upload failed. Please try again.');
+      });
+  }
+
+  // ---- SUBMIT NEW TOOL ----
+  function submitTool() {
+    var name = document.getElementById('add-name').value.trim();
+    var category = document.getElementById('add-category').value;
+    var icon = document.getElementById('add-icon').value.trim() || '🔧';
+    var condition = document.getElementById('add-condition').value;
+    var notes = document.getElementById('add-notes').value.trim();
+    if (!name || !category || !condition) {
+      alert('Please fill in the tool name, category and condition.');
+      return;
+    }
+    var btn = document.getElementById('add-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'addTool',
+        token: ownerToken,
+        name: name,
+        category: category,
+        icon: icon,
+        condition: condition,
+        notes: notes
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        btn.disabled = false;
+        btn.textContent = 'Add tool to Easy Street';
+        if (data.success) {
+          // If photo pending, upload it now
+          if (pendingPhotoBase64) {
+            fetch(API, {
+              method: 'POST',
+              body: JSON.stringify({
+                action: 'uploadPhoto',
+                tool_id: data.tool_id,
+                imageData: pendingPhotoBase64,
+                mimeType: pendingPhotoMime,
+                fileName: pendingPhotoName,
+                token: ownerToken
+              })
+            }).then(function(r){ return r.json(); }).then(function(){
+              showAddSuccess();
+            });
+          } else {
+            showAddSuccess();
+          }
+        } else {
+          alert(data.error || 'Something went wrong. Please try again.');
+        }
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Add tool to Easy Street';
+        alert('Something went wrong. Please try again.');
+      });
+  }
+
+  function showAddSuccess() {
+    pendingPhotoBase64 = null;
+    document.getElementById('success-title').textContent = 'Tool added';
+    document.getElementById('success-body').textContent = 'Your tool is now live on Easy Street. Neighbours can request to borrow it straight away.';
+    show('screen-success');
+  }
+
+  function reloadDashboard() {
+    loadOwnerPage();
+  }
+</script>
+</body>
+</html>
