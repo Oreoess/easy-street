@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Easy Street</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F4EE;
+    --ink: #1C1C1A;
+    --ink-soft: #6B6860;
+    --ink-faint: #C4C1B8;
+    --green: #2D5A27;
+    --green-light: #EAF2E8;
+    --amber: #C47B1A;
+    --amber-light: #FDF3E3;
+    --red-light: #FAE8E8;
+    --red: #A33030;
+    --border: rgba(28,28,26,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+  h1, h2, h3 { font-family: 'DM Serif Display', serif; font-weight: 400; }
+
+  /* SCREENS */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* HEADER */
+  .site-header { padding: 20px 20px 0; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--ink); letter-spacing: -0.3px; }
+  .logo span { color: var(--green); }
+  .tagline { font-size: 12px; color: var(--ink-soft); margin-top: 2px; letter-spacing: 0.02em; }
+
+  /* NAV HEADER (detail/request screens) */
+  .nav-header { display: flex; align-items: center; gap: 12px; padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+  .back-btn { background: none; border: none; cursor: pointer; color: var(--ink-soft); font-size: 20px; padding: 0; line-height: 1; flex-shrink: 0; }
+  .nav-title { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .nav-sub { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+
+  /* SEARCH + FILTERS */
+  .search-wrap { padding: 16px 20px 0; }
+  .search-input { width: 100%; padding: 11px 16px; border-radius: 40px; border: 1px solid var(--border); background: white; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
+  .search-input:focus { border-color: var(--ink); }
+  .search-input::placeholder { color: var(--ink-faint); }
+  .filters { display: flex; gap: 8px; padding: 12px 20px; overflow-x: auto; scrollbar-width: none; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-pill { white-space: nowrap; padding: 6px 14px; border-radius: 40px; border: 1px solid var(--border); background: none; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+  .filter-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+  /* RESULTS LABEL */
+  .results-label { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 20px 10px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-size: 14px; }
+  .loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); margin: 0 2px; animation: pulse 1.2s ease-in-out infinite; }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+
+  /* TOOL GRID */
+  .tool-grid { padding: 0 20px 32px; display: flex; flex-direction: column; gap: 12px; }
+  .tool-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; gap: 14px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+  .tool-card:active { transform: scale(0.98); }
+  .tool-card:hover { border-color: var(--ink); }
+  .tool-emoji { width: 48px; height: 48px; border-radius: var(--radius-sm); background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; }
+  .tool-emoji img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); }
+  .tool-body { flex: 1; min-width: 0; }
+  .tool-name { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .tool-listed-by { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .tool-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
+  .tag-available { background: var(--green-light); color: var(--green); }
+  .tag-loan { background: var(--amber-light); color: var(--amber); }
+  .tag-cat { background: var(--cream); color: var(--ink-soft); border: 1px solid var(--border); }
+
+  /* DETAIL SCREEN */
+  .detail-hero { padding: 24px 20px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); }
+  .detail-photo { width: 96px; height: 96px; border-radius: var(--radius); background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 48px; overflow: hidden; border: 1px solid var(--border); }
+  .detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-name { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--ink); text-align: center; }
+  .detail-rows { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 12px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-lbl { color: var(--ink-soft); flex-shrink: 0; }
+  .detail-val { color: var(--ink); font-weight: 500; text-align: right; }
+  .privacy-banner { margin: 16px 20px; padding: 12px 14px; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; gap: 10px; }
+  .privacy-banner-icon { font-size: 15px; flex-shrink: 0; }
+  .privacy-banner-text { font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+  .detail-actions { padding: 0 20px 32px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* BUTTONS */
+  .btn-primary { width: 100%; padding: 14px; border-radius: var(--radius); background: var(--ink); color: var(--cream); border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-secondary { width: 100%; padding: 13px; border-radius: var(--radius); background: none; color: var(--ink); border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; }
+  .btn-accept { width: 100%; padding: 12px; border-radius: var(--radius-sm); background: var(--green-light); color: var(--green); border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .btn-decline { width: 100%; padding: 12px; border-radius: var(--radius-sm); background: var(--red-light); color: var(--red); border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+  /* REQUEST FORM */
+  .form-wrap { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .field-lbl { font-size: 12px; color: var(--ink-soft); margin-bottom: 5px; }
+  .field-input { width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: white; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
+  .field-input:focus { border-color: var(--ink); }
+  .field-input::placeholder { color: var(--ink-faint); }
+  textarea.field-input { resize: none; height: 90px; line-height: 1.5; }
+  .form-note { font-size: 11px; color: var(--ink-soft); text-align: center; line-height: 1.6; padding: 0 8px; }
+
+  /* SUCCESS / STATUS SCREENS */
+  .status-screen { padding: 60px 24px 32px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .status-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+  .icon-sent { background: var(--amber-light); }
+  .icon-accepted { background: var(--green-light); }
+  .icon-declined { background: var(--red-light); }
+  .status-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--ink); }
+  .status-body { font-size: 14px; color: var(--ink-soft); line-height: 1.7; max-width: 280px; }
+
+  /* EMAIL PREVIEW */
+  .email-preview { margin: 0 20px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .email-preview-header { background: white; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .email-from { font-size: 11px; color: var(--ink-soft); }
+  .email-subject { font-size: 13px; font-weight: 500; color: var(--ink); margin-top: 2px; }
+  .email-preview-body { padding: 16px; font-size: 13px; color: var(--ink); line-height: 1.7; background: var(--cream); }
+  .email-preview-actions { display: flex; gap: 10px; padding: 12px 16px; background: white; border-top: 1px solid var(--border); }
+
+  /* REVEAL CARDS */
+  .reveal-cards { padding: 0 20px 32px; display: flex; flex-direction: column; gap: 10px; }
+  .reveal-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .reveal-card-lbl { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .reveal-name { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .reveal-contact { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* SECTION LABEL */
+  .section-lbl { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; padding: 16px 20px 8px; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 48px 20px; color: var(--ink-soft); font-size: 14px; }
+
+  /* ANIMATE IN */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .tool-card { animation: fadeUp 0.2s ease both; }
+</style>
+</head>
+<body>
+
+<!-- SCREEN: LIST -->
+<div id="screen-list" class="screen active">
+  <div class="site-header">
+    <div class="logo">Easy <span>Street</span></div>
+    <div class="tagline">Share tools with your neighbours</div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" type="text" placeholder="Search tools..." id="search-input" oninput="filterTools()" />
+  </div>
+  <div class="filters">
+    <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-pill" onclick="setFilter('garden',this)">Garden</button>
+    <button class="filter-pill" onclick="setFilter('diy',this)">DIY</button>
+    <button class="filter-pill" onclick="setFilter('kitchen',this)">Kitchen</button>
+    <button class="filter-pill" onclick="setFilter('available',this)">Available now</button>
+  </div>
+  <div class="results-label" id="results-label"></div>
+  <div class="tool-grid" id="tool-grid">
+    <div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>
+  </div>
+</div>
+
+<!-- SCREEN: DETAIL -->
+<div id="screen-detail" class="screen">
+  <div class="nav-header">
+    <button class="back-btn" onclick="show('screen-list')">&#8592;</button>
+    <div>
+      <div class="nav-title" id="d-title"></div>
+      <div class="nav-sub">Easy Street</div>
+    </div>
+  </div>
+  <div class="detail-hero">
+    <div class="detail-photo" id="d-photo"></div>
+    <div class="detail-name" id="d-name"></div>
+    <div class="tool-tags" id="d-tags"></div>
+  </div>
+  <div class="detail-rows">
+    <div class="detail-row"><span class="detail-lbl">Listed by</span><span class="detail-val">A neighbour on Easy Street</span></div>
+    <div class="detail-row"><span class="detail-lbl">Category</span><span class="detail-val" id="d-cat"></span></div>
+    <div class="detail-row"><span class="detail-lbl">Condition</span><span class="detail-val" id="d-cond"></span></div>
+    <div class="detail-row"><span class="detail-lbl">Notes</span><span class="detail-val" id="d-notes"></span></div>
+  </div>
+  <div class="privacy-banner">
+    <div class="privacy-banner-icon">🔒</div>
+    <div class="privacy-banner-text">The owner's name and contact details are only shared once they've agreed to lend. Your details are shared at the same moment.</div>
+  </div>
+  <div class="detail-actions">
+    <button class="btn-primary" id="d-req-btn" onclick="show('screen-request')">Request to borrow</button>
+    <button class="btn-secondary" onclick="show('screen-list')">Back to listings</button>
+  </div>
+</div>
+
+<!-- SCREEN: REQUEST FORM -->
+<div id="screen-request" class="screen">
+  <div class="nav-header">
+    <button class="back-btn" onclick="show('screen-detail')">&#8592;</button>
+    <div>
+      <div class="nav-title">Request to borrow</div>
+      <div class="nav-sub" id="req-tool-label"></div>
+    </div>
+  </div>
+  <div class="privacy-banner" style="margin:16px 20px 0;">
+    <div class="privacy-banner-icon">🔒</div>
+    <div class="privacy-banner-text">Your name and email are kept private until the owner accepts. Nothing is shared if they decline.</div>
+  </div>
+  <div class="form-wrap">
+    <div>
+      <div class="field-lbl">Your first name</div>
+      <input class="field-input" type="text" id="req-name" placeholder="e.g. Jamie" />
+    </div>
+    <div>
+      <div class="field-lbl">Your email</div>
+      <input class="field-input" type="email" id="req-email" placeholder="you@example.com" />
+    </div>
+    <div>
+      <div class="field-lbl">When do you need it? (optional)</div>
+      <input class="field-input" type="text" id="req-when" placeholder="e.g. this weekend" />
+    </div>
+    <div>
+      <div class="field-lbl">Message to the owner (optional)</div>
+      <textarea class="field-input" id="req-msg" placeholder="How long you'll need it, anything useful..."></textarea>
+    </div>
+    <button class="btn-primary" onclick="submitRequest()">Send request</button>
+    <div class="form-note">The owner gets an email. No phone numbers are shared at this stage.</div>
+  </div>
+</div>
+
+<!-- SCREEN: SENT -->
+<div id="screen-sent" class="screen">
+  <div class="status-screen">
+    <div class="status-icon icon-sent">✉️</div>
+    <div class="status-title">Request sent</div>
+    <div class="status-body">The owner has been notified anonymously. You'll hear back by email — usually within a day.</div>
+  </div>
+  <div class="section-lbl">What the owner receives</div>
+  <div class="email-preview">
+    <div class="email-preview-header">
+      <div class="email-from">From: Easy Street · no-reply</div>
+      <div class="email-subject" id="preview-subject"></div>
+    </div>
+    <div class="email-preview-body" id="preview-body"></div>
+    <div class="email-preview-actions">
+      <button class="btn-accept" onclick="simulateResponse('accept')">✓ Accept</button>
+      <button class="btn-decline" onclick="simulateResponse('decline')">✕ Decline</button>
+    </div>
+  </div>
+  <div class="form-note" style="padding:12px 20px 32px;">Tap above to preview what happens next</div>
+</div>
+
+<!-- SCREEN: ACCEPTED -->
+<div id="screen-accepted" class="screen">
+  <div class="status-screen">
+    <div class="status-icon icon-accepted">🎉</div>
+    <div class="status-title">Request accepted</div>
+    <div class="status-body">Both you and the owner can now see each other's contact details. Arrange the handover directly.</div>
+  </div>
+  <div class="section-lbl">Contact details now revealed</div>
+  <div class="reveal-cards">
+    <div class="reveal-card">
+      <div class="reveal-card-lbl">Tool owner</div>
+      <div class="reveal-name" id="rev-owner-name"></div>
+      <div class="reveal-contact" id="rev-owner-email"></div>
+    </div>
+    <div class="reveal-card">
+      <div class="reveal-card-lbl">You</div>
+      <div class="reveal-name" id="rev-borrower-name"></div>
+      <div class="reveal-contact" id="rev-borrower-email"></div>
+    </div>
+  </div>
+  <div style="padding: 0 20px 32px;">
+    <button class="btn-primary" onclick="show('screen-list')">Back to listings</button>
+  </div>
+</div>
+
+<!-- SCREEN: DECLINED -->
+<div id="screen-declined" class="screen">
+  <div class="status-screen">
+    <div class="status-icon icon-declined">😔</div>
+    <div class="status-title">Not available</div>
+    <div class="status-body">The owner isn't able to lend the tool right now. No contact details were shared — your privacy is protected either way.</div>
+  </div>
+  <div style="padding: 0 20px 32px;">
+    <button class="btn-primary" onclick="show('screen-list')">Browse other tools</button>
+  </div>
+</div>
+
+<script>
+  var API = "https://script.google.com/macros/s/AKfycbyKklhWEocHgjUuVLNQMN-iLFXFnoSB7r5_XZ-8Na7hUd8IZi0d_bgPmclT01BtyH0kuA/exec";
+  var allTools = [];
+  var currentTool = null;
+  var activeFilter = 'all';
+  var activeSearch = '';
+
+  // ---- INIT ----
+  fetch(API + "?action=getTools")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      allTools = data.tools || [];
+      renderList();
+    })
+    .catch(function(){
+      document.getElementById('tool-grid').innerHTML = '<div class="empty">Could not load tools. Please try again.</div>';
+    });
+
+  // ---- SCREENS ----
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  // ---- FILTERS ----
+  function setFilter(f, el) {
+    activeFilter = f;
+    document.querySelectorAll('.filter-pill').forEach(function(b){ b.classList.remove('active'); });
+    el.classList.add('active');
+    renderList();
+  }
+
+  function filterTools() {
+    activeSearch = document.getElementById('search-input').value.toLowerCase();
+    renderList();
+  }
+
+  // ---- RENDER LIST ----
+  function renderList() {
+    var filtered = allTools.filter(function(t){
+      var matchCat = activeFilter === 'all' || t.category === activeFilter || (activeFilter === 'available' && t.available);
+      var matchSearch = !activeSearch || t.name.toLowerCase().includes(activeSearch);
+      return matchCat && matchSearch;
+    });
+    var label = document.getElementById('results-label');
+    label.textContent = filtered.length + ' tool' + (filtered.length !== 1 ? 's' : '');
+    var grid = document.getElementById('tool-grid');
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="empty">No tools found</div>';
+      return;
+    }
+    grid.innerHTML = filtered.map(function(t, i){
+      var photoHtml = t.photo_url
+        ? '<img src="' + t.photo_url + '" alt="' + t.name + '" />'
+        : t.icon;
+      return '<div class="tool-card" style="animation-delay:' + (i * 0.04) + 's" onclick="openDetail(\'' + t.tool_id + '\')">'
+        + '<div class="tool-emoji">' + photoHtml + '</div>'
+        + '<div class="tool-body">'
+        + '<div class="tool-name">' + t.name + '</div>'
+        + '<div class="tool-listed-by">Listed by a neighbour</div>'
+        + '<div class="tool-tags">'
+        + '<span class="tag ' + (t.available ? 'tag-available' : 'tag-loan') + '">' + (t.available ? 'Available' : 'On loan') + '</span>'
+        + '<span class="tag tag-cat">' + t.category + '</span>'
+        + '</div></div></div>';
+    }).join('');
+  }
+
+  // ---- OPEN DETAIL ----
+  function openDetail(toolId) {
+    currentTool = allTools.find(function(t){ return t.tool_id === toolId; });
+    if (!currentTool) return;
+    var t = currentTool;
+    document.getElementById('d-title').textContent = t.name;
+    var photoEl = document.getElementById('d-photo');
+    photoEl.innerHTML = t.photo_url ? '<img src="' + t.photo_url + '" alt="' + t.name + '" />' : t.icon;
+    document.getElementById('d-name').textContent = t.name;
+    document.getElementById('d-tags').innerHTML =
+      '<span class="tag ' + (t.available ? 'tag-available' : 'tag-loan') + '">' + (t.available ? 'Available' : 'On loan') + '</span>'
+      + '<span class="tag tag-cat">' + t.category + '</span>';
+    document.getElementById('d-cat').textContent = t.category.charAt(0).toUpperCase() + t.category.slice(1);
+    document.getElementById('d-cond').textContent = t.condition;
+    document.getElementById('d-notes').textContent = t.notes || '—';
+    var btn = document.getElementById('d-req-btn');
+    btn.disabled = !t.available;
+    btn.textContent = t.available ? 'Request to borrow' : 'Currently on loan';
+    document.getElementById('req-tool-label').textContent = t.name;
+    show('screen-detail');
+  }
+
+  // ---- SUBMIT REQUEST ----
+  function submitRequest() {
+    var name = document.getElementById('req-name').value.trim();
+    var email = document.getElementById('req-email').value.trim();
+    if (!name || !email) { alert('Please enter your name and email.'); return; }
+    var when = document.getElementById('req-when').value.trim();
+    var msg = document.getElementById('req-msg').value.trim();
+    var t = currentTool;
+
+    document.getElementById('preview-subject').textContent = 'Easy Street: someone wants to borrow your ' + t.name;
+    document.getElementById('preview-body').innerHTML =
+      'Hi,<br><br>A neighbour on Easy Street wants to borrow your <strong>' + t.name + '</strong>.'
+      + (when ? '<br><br><strong>When they need it:</strong> ' + when : '')
+      + (msg ? '<br><br><strong>Their message:</strong> "' + msg + '"' : '')
+      + '<br><br>If you accept, their name and email will be shared with you — and yours with them.<br>If you decline, no details are exchanged.';
+
+    document.getElementById('rev-borrower-name').textContent = name;
+    document.getElementById('rev-borrower-email').textContent = email;
+    document.getElementById('rev-owner-name').textContent = 'Your neighbour (revealed on accept)';
+    document.getElementById('rev-owner-email').textContent = 'their email will appear here';
+
+    // Real API call
+    fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'submitRequest',
+        tool_id: t.tool_id,
+        borrower_name: name,
+        borrower_email: email,
+        message: msg,
+        when_needed: when
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.success) show('screen-sent');
+        else alert('Something went wrong. Please try again.');
+      })
+      .catch(function(){ show('screen-sent'); });
+  }
+
+  // ---- SIMULATE RESPONSE (demo only) ----
+  function simulateResponse(type) {
+    if (type === 'accept') {
+      document.getElementById('rev-owner-name').textContent = 'Your neighbour (No. 14)';
+      document.getElementById('rev-owner-email').textContent = 'neighbour@example.com';
+      show('screen-accepted');
+    } else {
+      show('screen-declined');
+    }
+  }
+</script>
+</body>
+</html>
