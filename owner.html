@@ -340,73 +340,106 @@
 
   // ---- PHOTO PREVIEW (add) ----
   function previewPhoto(input) {
+    console.log('previewPhoto called, files:', input.files ? input.files.length : 0);
     if (!input.files || !input.files[0]) return;
     var file = input.files[0];
+    console.log('File selected:', file.name, file.type, Math.round(file.size/1024) + 'KB');
+    if (file.size > 5 * 1024 * 1024) { alert('Image is too large. Please use one under 5MB.'); return; }
     var reader = new FileReader();
+    reader.onerror = function() { console.error('FileReader error'); alert('Could not read the image. Please try another.'); };
     reader.onload = function(e) {
+      console.log('FileReader loaded, data length:', e.target.result.length);
       var zone = document.getElementById('upload-zone');
       var preview = document.getElementById('upload-preview');
       var placeholder = document.getElementById('upload-placeholder');
       preview.src = e.target.result;
+      preview.style.display = 'block';
       preview.classList.remove('hidden');
+      placeholder.style.display = 'none';
       placeholder.classList.add('hidden');
       zone.classList.add('has-image');
       pendingPhotoBase64 = e.target.result.split(',')[1];
       pendingPhotoMime = file.type;
       pendingPhotoName = file.name;
+      console.log('Preview set, base64 length:', pendingPhotoBase64.length);
     };
     reader.readAsDataURL(file);
   }
 
   // ---- PHOTO PREVIEW (edit) ----
   function previewPhotoEdit(input) {
+    console.log('previewPhotoEdit called, files:', input.files ? input.files.length : 0);
     if (!input.files || !input.files[0]) return;
     var file = input.files[0];
+    console.log('File selected (edit):', file.name, file.type, Math.round(file.size/1024) + 'KB');
+    if (file.size > 5 * 1024 * 1024) { alert('Image is too large. Please use one under 5MB.'); return; }
     var reader = new FileReader();
+    reader.onerror = function() { console.error('FileReader error (edit)'); alert('Could not read the image. Please try another.'); };
     reader.onload = function(e) {
+      console.log('FileReader loaded (edit), data length:', e.target.result.length);
       var zone = document.getElementById('upload-zone-edit');
       var preview = document.getElementById('upload-preview-edit');
       var placeholder = document.getElementById('upload-placeholder-edit');
       preview.src = e.target.result;
+      preview.style.display = 'block';
       preview.classList.remove('hidden');
+      placeholder.style.display = 'none';
       placeholder.classList.add('hidden');
       zone.classList.add('has-image');
       pendingPhotoBase64 = e.target.result.split(',')[1];
       pendingPhotoMime = file.type;
       pendingPhotoName = file.name;
+      console.log('Preview set (edit), base64 length:', pendingPhotoBase64.length);
     };
     reader.readAsDataURL(file);
   }
 
   // ---- OPEN PHOTO EDIT ----
   function openPhotoEdit(toolId, toolName) {
+    console.log('openPhotoEdit:', toolId, toolName);
     currentEditToolId = toolId;
     pendingPhotoBase64 = null;
     document.getElementById('photo-tool-name').textContent = toolName;
-    document.getElementById('upload-preview-edit').classList.add('hidden');
-    document.getElementById('upload-placeholder-edit').classList.remove('hidden');
+    var preview = document.getElementById('upload-preview-edit');
+    preview.classList.add('hidden');
+    preview.style.display = 'none';
+    preview.src = '';
+    var placeholder = document.getElementById('upload-placeholder-edit');
+    placeholder.classList.remove('hidden');
+    placeholder.style.display = '';
     document.getElementById('upload-zone-edit').classList.remove('has-image');
+    // Reset the file input so the same file can be selected again
+    var fileInput = document.getElementById('photo-file-edit');
+    fileInput.value = '';
     show('screen-photo');
   }
 
   // ---- SUBMIT PHOTO ----
   function submitPhoto() {
+    console.log('submitPhoto called, has base64:', !!pendingPhotoBase64, 'toolId:', currentEditToolId);
     if (!pendingPhotoBase64) { alert('Please choose a photo first.'); return; }
     var btn = document.getElementById('photo-submit-btn');
     btn.disabled = true;
     btn.textContent = 'Uploading...';
+    var payload = {
+      action: 'uploadPhoto',
+      tool_id: currentEditToolId,
+      imageData: pendingPhotoBase64,
+      mimeType: pendingPhotoMime,
+      fileName: pendingPhotoName,
+      token: ownerToken
+    };
+    console.log('Uploading photo, payload size:', JSON.stringify(payload).length, 'bytes');
     fetch(API, {
       method: 'POST',
-      body: JSON.stringify({
-        action: 'uploadPhoto',
-        tool_id: currentEditToolId,
-        imageData: pendingPhotoBase64,
-        mimeType: pendingPhotoMime,
-        fileName: pendingPhotoName,
-        token: ownerToken
-      })
-    }).then(function(r){ return r.json(); })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      console.log('Upload response status:', r.status);
+      return r.json();
+    })
       .then(function(data){
+        console.log('Upload response data:', JSON.stringify(data));
         btn.disabled = false;
         btn.textContent = 'Save photo';
         if (data.success) {
@@ -418,13 +451,14 @@
           document.getElementById('success-body').textContent = 'Your tool photo is now live on Easy Street.';
           show('screen-success');
         } else {
-          alert('Upload failed. Please try again.');
+          alert('Upload failed: ' + (data.error || 'Unknown error'));
         }
       })
-      .catch(function(){
+      .catch(function(err){
+        console.error('Upload error:', err);
         btn.disabled = false;
         btn.textContent = 'Save photo';
-        alert('Upload failed. Please try again.');
+        alert('Upload failed: ' + err.message);
       });
   }
 
